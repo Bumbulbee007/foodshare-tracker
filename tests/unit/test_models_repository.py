@@ -160,7 +160,7 @@ def test_presentation_layer_never_touches_files():                   # NFR-18 (c
     sources = [root / "app.py", *sorted((root / "ui").glob("*.py"))]
     assert len(sources) > 1
     for path in sources:
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         for forbidden in ("open(", "json.load", "json.dump", "import repository",
                           "JsonRepository", ".repo."):
             assert forbidden not in text, f"{path.name} must not use {forbidden!r}"

@@ -215,3 +215,17 @@ def test_screens_never_show_banned_terms():                                  # N
     root = TEXT_DIR.parents[1]
     for path in [root / "app.py", *sorted((root / "ui").glob("*.py"))]:
         assert find_banned_terms(path.read_text(encoding="utf-8")) == [], path.name
+
+
+
+def test_no_form_or_widget_key_is_also_a_session_state_key():
+    """Streamlit forbids writing session_state[key] when a widget or form owns that key."""
+    import re
+    root = TEXT_DIR.parents[1]
+    widget_keys, state_keys = set(), set()
+    for path in [root / "app.py", *sorted((root / "ui").glob("*.py"))]:
+        source = path.read_text(encoding="utf-8")
+        widget_keys |= set(re.findall(r'st\.form\(f?"([^"]+)"', source))
+        widget_keys |= set(re.findall(r'key=f?"([^"]+)"', source))
+        state_keys |= set(re.findall(r'session_state\["([^"]+)"\]\s*=', source))
+    assert widget_keys & state_keys == set()
