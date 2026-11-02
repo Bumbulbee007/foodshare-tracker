@@ -1,0 +1,168 @@
+classDiagram
+    direction LR
+    class User {
+        +str id
+        +Role role
+        +str secret_hash
+        +str salt
+        +bool uses_pin
+        +bool active
+        +int failed_attempts
+        +str locked_until
+    }
+    class Role {
+        <<enumeration>>
+        ADMIN
+        STAFF
+        VOLUNTEER
+    }
+    class AuditEntry {
+        +str id
+        +str timestamp
+        +str user
+        +str action
+        +str record
+        +str outcome
+        +str detail
+    }
+    class Item {
+        +str id
+        +str category
+        +str unit
+        +list~str~ allergens
+        +list~str~ dietary_tags
+        +bool essential
+        +float min_level
+    }
+    class StockBatch {
+        +str id
+        +float quantity
+        +float reserved
+        +str expiry
+        +str storage
+        +BatchStatus status
+        +str flag_reason
+        +available() float
+    }
+    class Donation {
+        +str id
+        +str received_on
+        +str donor_name
+        +str donor_contact
+    }
+    class DonationLine {
+        +str item
+        +float quantity
+        +str expiry
+        +str batch_id
+    }
+    class DonorOffer {
+        +str id
+        +str donor_name
+        +list items
+        +str dropoff_time
+    }
+    class StockMovement {
+        +str id
+        +str date
+        +float quantity
+        +MovementKind kind
+        +str reference
+    }
+    class Client {
+        +str id
+        +str preferred_name
+        +str contact_method
+        +str preferred_language
+        +int adults
+        +int children
+        +int infants
+        +int older
+        +list~str~ dietary
+        +list~str~ religious
+        +list~str~ medical
+        +list~str~ allergies
+        +list~str~ accessibility
+        +dict consents
+        +bool deleted
+        +household_size() int
+        +requirement_tags() list
+    }
+    class ClientNote {
+        +str text
+        +str author
+        +bool restricted
+    }
+    class Visit {
+        +str date
+        +str hamper_id
+    }
+    class AllocationRule {
+        +str id
+        +str unit
+        +float per_adult
+        +float per_child
+        +float per_infant
+        +describe() str
+    }
+    class Pickup {
+        +str id
+        +str date
+        +str slot
+        +str code
+        +PickupStatus status
+    }
+    class Hamper {
+        +str id
+        +HamperStatus status
+        +list shortfalls
+        +list adjustments
+    }
+    class HamperLine {
+        +str item
+        +float quantity
+        +str rule_text
+        +bool packed
+        +str substituted_from
+        +str substitution_note
+    }
+    class UnmetRequest {
+        +str id
+        +str category
+        +str need
+        +float quantity
+        +str date
+    }
+    class Task {
+        +str id
+        +TaskKind kind
+        +str title
+        +int priority
+        +TaskStatus status
+        +str completed_at
+    }
+    class TaskFlag {
+        +str issue_type
+        +str note
+        +bool resolved
+    }
+
+    User --> Role : has exactly one
+    AuditEntry "0..*" --> "1" User : performed by
+    Donation "1" *-- "1..*" DonationLine : lines
+    DonationLine "1" --> "1" StockBatch : created
+    Item "1" o-- "0..*" StockBatch : stock of
+    AllocationRule "1" o-- "1..*" Item : category of
+    StockMovement "0..*" --> "1" StockBatch : changes
+    Client "1" *-- "0..*" ClientNote : notes
+    Client "1" *-- "0..*" Visit : visit history
+    Pickup "0..*" --> "1" Client : booked for
+    Pickup "1" -- "0..1" Hamper : collects
+    Hamper "1" *-- "0..*" HamperLine : lines
+    HamperLine "0..*" --> "1" StockBatch : reserves from
+    HamperLine ..> AllocationRule : quantity from
+    UnmetRequest "0..*" --> "1" Hamper : raised by
+    UnmetRequest "0..*" --> "1" Client : for
+    Task "0..1" --> "0..1" Hamper : packs
+    Task "0..*" --> "0..1" User : assigned to
+    Task "1" *-- "0..*" TaskFlag : issues

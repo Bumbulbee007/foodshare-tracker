@@ -1,0 +1,30 @@
+{
+  "app_title": "FoodShare Tracker",
+  "login_failed": "Log-in failed. Check your details, or wait 5 minutes if you have tried several times.",
+  "session_expired": "You were logged out after 10 minutes without activity. Please log in again.",
+  "permission_denied": "Sorry, your role does not include this. Please ask a staff member if you need it.",
+  "expired_donation": "This item has passed its expiry date and cannot be accepted.",
+  "donation_guidance": "We can accept sealed, in-date packaged food and fresh produce. We cannot accept home-cooked food, opened packets or alcohol.",
+  "code_not_found": "Code not found.",
+  "no_activity": "No activity in this period.",
+  "consent_purpose": {
+    "dietary": "We ask about diets such as vegetarian or vegan so your hamper has food you choose to eat.",
+    "religious": "We ask about religious or cultural food needs, such as halal or kosher, so your hamper respects them.",
+    "medical": "We ask about medical diets, such as gluten-free, so your hamper is safe for your health.",
+    "allergies": "We ask about allergies so we never pack food that could make someone in your household unwell.",
+    "accessibility": "We ask about access needs so we can make pickup easier for you."
+  },
+  "pickup_message": {
+    "English": "Your pickup is ready on {date}, {slot}. Code: {code}. Please show this code at the counter."
+  },
+  "kiosk": {
+    "welcome": "Welcome. Touch Start to change your pickup time or how we contact you.",
+    "enter_code": "Type your pickup code.",
+    "enter_pin": "Type your 4-number PIN.",
+    "choose": "What would you like to change?",
+    "saved": "Saved. Thank you.",
+    "ask_staff": "Please ask a staff member for help.",
+    "timeout": "We went back to the start to keep your details private."
+  },
+  "substitution_example": "Lentils replaced chickpeas this week as chickpeas are out of stock."
+}

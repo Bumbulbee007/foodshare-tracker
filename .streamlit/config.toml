@@ -1,0 +1,15 @@
+# Local, offline use: no usage statistics leave the computer (privacy, NFR-17)
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = false
+address = "localhost"
+
+[theme]
+base = "light"
+primaryColor = "#1F5F3F"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F2F5F3"
+textColor = "#111111"
+font = "sans serif"

@@ -1,0 +1,63 @@
+sequenceDiagram
+    actor Vol as Margaret (Volunteer)
+    participant UI as MyTasksPage
+    participant TS as TaskService
+    participant HS as HamperService
+    participant Repo as JsonRepository
+
+    Vol->>UI: Open task "Pack hamper H-0001"
+    UI->>TS: task_view(user, task_id)
+    TS->>Repo: get task
+    alt task not assigned to this volunteer
+        TS->>Repo: add("audit", denied)
+        TS--)UI: PermissionDeniedError
+        UI-->>Vol: Polite "not available" message
+    else assigned
+        TS->>Repo: get hamper and household
+        TS->>TS: hamper_tags(client): diet and allergy tags only
+        TS-->>UI: lines + tags (no name, contact or history)
+        UI-->>Vol: Items with tick boxes, tags e.g. halal, tree-nut-free, infant
+        loop for each item in the hamper
+            alt item is on the shelf
+                Vol->>UI: Tick item
+                UI->>TS: set_line_packed(user, task_id, line)
+                TS->>Repo: add("hampers")
+            else item not on the shelf
+                Vol->>UI: Click "Not on the shelf?"
+                UI->>TS: substitutes_for(user, task_id, line)
+                TS->>HS: safe_substitutes(hamper, line)
+                HS->>Repo: get household, items, batches
+                HS-->>TS: same category, in stock, allergen-safe, diet-matched batches
+                alt at least one safe substitute
+                    TS-->>UI: safe list
+                    Vol->>UI: Choose substitute, edit note
+                    UI->>TS: substitute_line(user, task_id, line, batch_id, note)
+                    TS->>TS: check note present and respectful
+                    TS->>Repo: move reservation old batch to new batch
+                    TS->>Repo: add("hampers"), add("audit", substitute)
+                    UI-->>Vol: "Substitute added. Please pack it and tick it."
+                else no safe substitute
+                    TS-->>UI: empty list
+                    Vol->>UI: Click "Leave this item out"
+                    UI->>TS: mark_line_unavailable(user, task_id, line)
+                    TS->>Repo: release reservation, add("unmet", UnmetRequest)
+                    TS->>Repo: add("hampers"), add("audit", unavailable)
+                end
+            end
+        end
+        Vol->>UI: Click "Mark task complete"
+        UI->>TS: complete_task(user, task_id)
+        alt some item not ticked
+            TS--)UI: ValidationError("Tick every item...")
+            UI-->>Vol: Show what is still to pack
+        else every item packed
+            loop for each line
+                TS->>Repo: batch.quantity -= qty, batch.reserved -= qty
+                TS->>Repo: add("movements", packed)
+            end
+            TS->>Repo: add("hampers", packed), add("tasks", complete)
+            TS->>Repo: add("audit", complete)
+            TS-->>UI: Task (complete)
+            UI-->>Vol: "Well done - the task is complete"
+        end
+    end

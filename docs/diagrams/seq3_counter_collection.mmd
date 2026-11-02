@@ -1,0 +1,45 @@
+sequenceDiagram
+    actor Staff as Grace (Staff, counter)
+    participant UI as CounterPage
+    participant HS as HamperService
+    participant AC as AccessControl
+    participant Repo as JsonRepository
+
+    Note over Staff,UI: Client gives code K27, no name called out
+    Staff->>UI: Type code, click "Find"
+    UI->>HS: counter_lookup(user, code)
+    HS->>AC: require(user, "pickup.write")
+    alt role not permitted
+        AC->>Repo: add("audit", denied)
+        AC--)UI: PermissionDeniedError
+        UI-->>Staff: Polite refusal
+    else permitted
+        HS->>Repo: find booked pickup with code
+        alt no booked pickup has this code
+            HS--)UI: NotFoundError("Code not found.")
+            UI-->>Staff: "Code not found." (reveals nothing else)
+        else found
+            HS->>Repo: get hamper for pickup
+            HS-->>UI: code, date, slot, hamper status, item count
+            UI-->>Staff: Large code and status, no name or needs
+            opt hamper status is "packed"
+                Staff->>UI: Click "Confirm collection"
+                UI->>HS: confirm_collection(user, code)
+                HS->>AC: require(user, "pickup.write")
+                HS->>Repo: find pickup and hamper again
+                alt hamper not packed (e.g. changed meanwhile)
+                    HS--)UI: ValidationError("not packed yet")
+                    UI-->>Staff: Ask staff to check packing tasks
+                else packed
+                    loop for each hamper line
+                        HS->>Repo: add("movements", distributed)
+                    end
+                    HS->>Repo: hamper status = collected, pickup status = collected
+                    HS->>Repo: append Visit(today, hamper) to client
+                    HS->>Repo: add("audit", collect)
+                    HS-->>UI: code, hamper id, item count
+                    UI-->>Staff: "Collection of K27 recorded. Thank you."
+                end
+            end
+        end
+    end

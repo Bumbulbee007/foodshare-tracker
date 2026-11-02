@@ -1,0 +1,62 @@
+sequenceDiagram
+    actor Staff as Grace (Staff)
+    participant UI as HampersPage
+    participant HS as HamperService
+    participant AC as AccessControl
+    participant Repo as JsonRepository
+
+    Staff->>UI: Enter pickup code, click "Generate suggested hamper"
+    UI->>HS: generate_hamper(user, code)
+    HS->>AC: require(user, "hamper.write")
+    alt role not permitted
+        AC->>Repo: add("audit", denied entry)
+        AC--)HS: PermissionDeniedError
+        HS--)UI: PermissionDeniedError
+        UI-->>Staff: "Sorry, your role does not include this"
+    else permitted
+        HS->>Repo: find booked pickup with code
+        alt code not found
+            HS--)UI: NotFoundError("Code not found.")
+            UI-->>Staff: "Code not found." (no other data shown)
+        else pickup found
+            HS->>Repo: get client, items, rules, batches
+            loop for each allocation rule (sorted by category)
+                HS->>HS: required_quantity(rule, client)
+                HS->>HS: keep batches where is_batch_usable() AND is_item_eligible(), then sort FEFO
+                loop while quantity still needed and batches remain
+                    HS->>HS: add HamperLine(batch, take, rule text)
+                end
+                opt quantity still needed
+                    HS->>HS: add shortfall(category, need label)
+                end
+            end
+            HS->>Repo: add("hampers", status suggested), add("pickups")
+            HS->>Repo: add("audit", create)
+            HS-->>UI: Hamper (suggested)
+            UI-->>Staff: Show lines, rule used for each, shortfalls
+            opt staff change a quantity
+                Staff->>UI: line, new quantity, reason
+                UI->>HS: adjust_line(user, id, line, qty, reason)
+                HS->>Repo: add("hampers"), add("audit", adjust + reason)
+            end
+            Staff->>UI: Click "Confirm and create packing task"
+            UI->>HS: confirm_hamper(user, id, priority)
+            HS->>AC: require(user, "hamper.write")
+            HS->>Repo: get each line's batch
+            alt any batch has less available than its line
+                HS--)UI: ValidationError("generate it again")
+                UI-->>Staff: Ask staff to cancel and regenerate
+            else stock still available
+                loop for each line
+                    HS->>Repo: batch.reserved += quantity
+                end
+                loop for each shortfall
+                    HS->>Repo: add("unmet", UnmetRequest)
+                end
+                HS->>Repo: add("tasks", pack task), add("hampers", confirmed)
+                HS->>Repo: add("audit", confirm)
+                HS-->>UI: Task
+                UI-->>Staff: "Confirmed. Packing task T-0007 created"
+            end
+        end
+    end

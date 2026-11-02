@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+data/
+foodshare.log
+.pytest_cache/
+.coverage
